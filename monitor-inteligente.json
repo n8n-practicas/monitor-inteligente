@@ -1,0 +1,420 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9c3531a9-c50b-4666-980c-e59a46d293fe",
+      "name": "Monitor Inteligente"
+    },
+    {
+      "parameters": {
+        "url": "=https://news.google.com/rss/search?q={{ $json.tema }}&hl=es&gl=CO&ceid=CO:es",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5b90020f-5366-4f1b-a431-ca90ca230844",
+      "name": "Obtener RSS"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "f0146f5c-e1b5-4fcd-aa0b-ea054e79217f",
+      "name": "Parsear XML"
+    },
+    {
+      "parameters": {
+        "jsCode": "const channel = $input.first().json.rss.channel;\nconst posts = channel.item || [];\nconst items = [];\n\nfor (const post of posts.slice(0, 5)) {\n  items.push({\n    json: {\n      titulo: post.title,\n      link: post.link,\n      fecha: post.pubDate || '',\n      id_unico: post.link.substring(post.link.length - 20)\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "7e6c6212-ad20-43e6-a6ef-d8ecfac803a6",
+      "name": "Extraer Titulares"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza esta noticia y responde SOLO en JSON así:\n{\"sentimiento\": \"positivo\" o \"negativo\" o \"neutro\", \"puntuacion\": numero del 0 al 100, \"resumen\": \"resumen breve en una frase\", \"es_crisis\": true o false}\n\nNoticia: {{ $json.titulo }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a71d7673-9549-4d60-82ba-f656d2ce9e77",
+      "name": "Analizar Sentimiento"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        560,
+        208
+      ],
+      "id": "2573ff7f-d854-4278-a21b-4b247384d497",
+      "name": "Groq llama",
+      "credentials": {
+        "groqApi": {
+          "id": "0dOgg4vzkM940Iiv",
+          "name": "Groq account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1GuHUWGF-yPNK8xO5iCUloucr1qEifNq1l_Zk5z4DSMo",
+          "mode": "list",
+          "cachedResultName": "Monitor Inteligente",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GuHUWGF-yPNK8xO5iCUloucr1qEifNq1l_Zk5z4DSMo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GuHUWGF-yPNK8xO5iCUloucr1qEifNq1l_Zk5z4DSMo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_unico": "={{ $json.id_unico }}",
+            "Fecha": "={{ $now.toISO() }}",
+            "Titulo": "={{ $json.titulo }}",
+            "Sentimiento": "={{ $json.sentimiento }}",
+            "Puntuacion": "={{ $json.puntuacion }}",
+            "Es_crisis": "={{ $json.es_crisis }}"
+          },
+          "matchingColumns": [
+            "id_unico"
+          ],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Titulo",
+              "displayName": "Titulo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentimiento",
+              "displayName": "Sentimiento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Puntuacion",
+              "displayName": "Puntuacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Es_crisis",
+              "displayName": "Es_crisis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id_unico",
+              "displayName": "id_unico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1648,
+        0
+      ],
+      "id": "e9b091cd-32b1-44b3-942b-47ff52afe24f",
+      "name": "Guardar en Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TDkXM9NksELL9TVY",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\n\nfor (const item of $input.all()) {\n  let parsed;\n  try {\n    parsed = JSON.parse(item.json.text);\n  } catch(e) {\n    parsed = { sentimiento: 'neutro', puntuacion: 50, es_crisis: false };\n  }\n  \n  // Buscar el titulo e id_unico en el nodo Extraer Titulares\n  const extraer = $('Extraer Titulares').all();\n  const index = $input.all().indexOf(item);\n  const original = extraer[index] ? extraer[index].json : {};\n  \n  items.push({\n    json: {\n      titulo: original.titulo || '',\n      sentimiento: parsed.sentimiento,\n      puntuacion: parsed.puntuacion,\n      es_crisis: parsed.es_crisis,\n      id_unico: original.id_unico || ''\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        0
+      ],
+      "id": "9c71f785-c249-4c87-9b32-3aaf397a38c8",
+      "name": "Parsear Resultado IA"
+    },
+    {
+      "parameters": {
+        "jsCode": "const temas = [\n  { tema: \"noticias mundo\" },\n  { tema: \"inteligencia artificial\" },\n  { tema: \"guerras conflictos\" },\n  { tema: \"tecnologia\" },\n  { tema: \"economia global\" }\n];\n\nreturn temas.map(t => ({ json: t }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "495b7f89-5273-4200-adcf-e6b16cbeb597",
+      "name": "Temas a Monitorear"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "beae7e63-deeb-46f9-bae1-ee756fd2cf59",
+              "leftValue": "={{ $json.Es_crisis }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1856,
+        0
+      ],
+      "id": "a9f2ebe0-22ef-4abd-aae8-2148390db305",
+      "name": "Es Crisis?"
+    },
+    {
+      "parameters": {
+        "chatId": "8005467511",
+        "text": "=🚨 ALERTA DE CRISIS 🚨\n\nTema: {{ $json.Titulo }}\nSentimiento: {{ $json.Sentimiento }}\nPuntuación: {{ $json.Puntuacion }}\n\n⚠️ Esta noticia fue detectada como crisis!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2128,
+        -16
+      ],
+      "id": "f8d5fbe2-879d-48b8-ac32-343d82fcb146",
+      "name": "Send a text message",
+      "webhookId": "aec68ca1-febd-449d-bfbc-ddf7d00fc2b9",
+      "credentials": {
+        "telegramApi": {
+          "id": "FIu01AHRKncDAvwD",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Monitor Inteligente": {
+      "main": [
+        [
+          {
+            "node": "Temas a Monitorear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener RSS": {
+      "main": [
+        [
+          {
+            "node": "Parsear XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear XML": {
+      "main": [
+        [
+          {
+            "node": "Extraer Titulares",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Titulares": {
+      "main": [
+        [
+          {
+            "node": "Analizar Sentimiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq llama": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analizar Sentimiento",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Sentimiento": {
+      "main": [
+        [
+          {
+            "node": "Parsear Resultado IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Resultado IA": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Temas a Monitorear": {
+      "main": [
+        [
+          {
+            "node": "Obtener RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar en Sheets": {
+      "main": [
+        [
+          {
+            "node": "Es Crisis?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Crisis?": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b60fb4b8-ab23-488e-af44-66138d95a614",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d03888bb0cda25df4a1ad3851243475954ca91ddd3233540aafb991b7f0a1834"
+  },
+  "id": "JRqFfxKIKc0u9XBV",
+  "tags": []
+}
